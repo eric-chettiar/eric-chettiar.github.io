@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wind Tunnel Battery TMS | Eric Chettiar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #090c13;
+      --surface:  #0f1520;
+      --surface2: #161d2e;
+      --border:   rgba(255,255,255,0.07);
+      --hot:      #f97316;
+      --amber:    #fbbf24;
+      --cool:     #38bdf8;
+      --text:     #e8edf5;
+      --muted:    #6b7a99;
+      --subtle:   #2a3349;
+      --gradient: linear-gradient(135deg, #f97316, #fbbf24);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 16px; line-height: 1.7; overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 4rem;
+      background: rgba(9,12,19,0.85); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.05em; color: var(--text); text-decoration: none; }
+    .nav-logo span { color: var(--hot); }
+    .nav-back { display: flex; align-items: center; gap: 0.5rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--muted); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.2s; }
+    .nav-back:hover { color: var(--hot); }
+
+    /* HERO */
+    .project-hero {
+      padding: 9rem 4rem 4rem; position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-glow { position: absolute; top: -10%; right: -5%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(56,189,248,0.1) 0%, transparent 70%); pointer-events: none; }
+    .hero-glow-2 { position: absolute; bottom: 0; left: -5%; width: 350px; height: 350px; background: radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 70%); pointer-events: none; }
+    .project-type-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--cool); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem; }
+    .project-type-label::before { content: ''; display: inline-block; width: 24px; height: 1px; background: var(--cool); }
+    .project-hero h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -0.02em; line-height: 1.05; margin-bottom: 1.2rem; max-width: 820px; }
+    .project-hero > p { font-size: 1.05rem; color: var(--muted); max-width: 640px; margin-bottom: 2.5rem; line-height: 1.75; }
+    .project-hero > p strong { color: var(--text); font-weight: 400; }
+
+    /* HERO STATS */
+    .hero-stats { display: flex; gap: 0; flex-wrap: wrap; border: 1px solid var(--border); width: fit-content; }
+    .hero-stat { padding: 1.2rem 2rem; border-right: 1px solid var(--border); }
+    .hero-stat:last-child { border-right: none; }
+    .hero-stat-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 0.2rem; }
+    .hero-stat-num.cool { background: linear-gradient(135deg, var(--cool), #818cf8); -webkit-background-clip: text; background-clip: text; }
+    .hero-stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+
+    /* SECTIONS */
+    .page-section { padding: 4rem; border-bottom: 1px solid var(--border); }
+    .page-section.alt { background: var(--surface); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .section-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--cool); margin-bottom: 0.6rem; }
+    .section-heading { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+    .section-rule { width: 36px; height: 3px; background: linear-gradient(135deg, var(--cool), #818cf8); margin-bottom: 1.5rem; }
+
+    /* PHOTO GRID */
+    .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .photo-grid-wide { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .photo-item { position: relative; overflow: hidden; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); }
+    .photo-item img { width: 100%; height: 200px; object-fit: cover; display: block; transition: transform 0.4s; }
+    .photo-item:hover img { transform: scale(1.03); }
+    .photo-item.tall img { height: 260px; }
+    .photo-caption { padding: 0.5rem 0.7rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border-top: 1px solid var(--border); }
+
+    /* SETUP LIST */
+    .setup-list { list-style: none; display: flex; flex-direction: column; gap: 0.9rem; }
+    .setup-item { display: flex; gap: 1rem; align-items: flex-start; padding: 0.9rem 1.1rem; background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--cool); border-radius: 0 4px 4px 0; }
+    .setup-item:nth-child(2) { border-left-color: var(--hot); }
+    .setup-item:nth-child(3) { border-left-color: var(--amber); }
+    .setup-item:nth-child(4) { border-left-color: var(--muted); }
+    .setup-item:nth-child(5) { border-left-color: #818cf8; }
+    .setup-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .setup-text strong { display: block; font-weight: 500; font-size: 0.88rem; margin-bottom: 0.1rem; color: var(--text); }
+    .setup-text span { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+    /* RESULTS PLOTS */
+    .plots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.5rem; }
+    .plot-card { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--surface2); transition: border-color 0.2s; }
+    .plot-card:hover { border-color: var(--subtle); }
+    .plot-header { padding: 0.7rem 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    .plot-wind { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+    .plot-wind.danger { color: #ef4444; }
+    .plot-wind.warning { color: var(--amber); }
+    .plot-wind.good { color: #22c55e; }
+    .plot-wind.great { color: var(--cool); }
+    .plot-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.2rem 0.55rem; border-radius: 2px; }
+    .plot-badge.danger { color: #ef4444; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); }
+    .plot-badge.warning { color: var(--amber); background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); }
+    .plot-badge.good { color: #22c55e; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); }
+    .plot-badge.great { color: var(--cool); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); }
+    .plot-card img { width: 100%; display: block; }
+
+    /* SUMMARY CHART */
+    .chart-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; }
+    .chart-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 1rem; }
+
+    /* FINDINGS */
+    .finding-list { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
+    .finding-item { display: flex; gap: 0.8rem; align-items: flex-start; font-size: 0.88rem; color: var(--muted); line-height: 1.65; }
+    .finding-item::before { content: '→'; color: var(--cool); flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; margin-top: 1px; }
+    .finding-item strong { color: var(--text); font-weight: 500; }
+
+    /* LIMITATIONS */
+    .limit-list { list-style: none; display: flex; flex-direction: column; gap: 0.65rem; }
+    .limit-list li { font-size: 0.85rem; color: var(--muted); display: flex; gap: 0.6rem; align-items: flex-start; line-height: 1.6; }
+    .limit-list li::before { content: '—'; color: var(--subtle); flex-shrink: 0; }
+    .limit-group { margin-bottom: 1.8rem; }
+    .limit-group h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.7rem; }
+
+    /* TAGS */
+    .tags-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+    .tag { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 0.3rem 0.7rem; border-radius: 2px; letter-spacing: 0.04em; }
+
+    /* FOOTER NAV */
+    .page-footer-nav { padding: 3rem 4rem; display: flex; justify-content: space-between; align-items: center; }
+    .footer-nav-link { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; text-decoration: none; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.2s; }
+    .footer-nav-link:hover { color: var(--hot); }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      nav { padding: 1rem 1.5rem; }
+      .project-hero, .page-section { padding: 4rem 1.5rem; }
+      .project-hero { padding-top: 7rem; }
+      .two-col { grid-template-columns: 1fr; gap: 2.5rem; }
+      .plots-grid { grid-template-columns: 1fr; }
+      .photo-grid { grid-template-columns: 1fr; }
+      .hero-stats { flex-direction: column; }
+      .hero-stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .page-footer-nav { flex-direction: column; gap: 1.5rem; padding: 2rem 1.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">E<span>.</span>CHETTIAR</a>
+    <a href="index.html#projects" class="nav-back">← All Projects</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="project-hero">
+    <div class="hero-glow"></div>
+    <div class="hero-glow-2"></div>
+    <div class="project-type-label">Experimental Research &nbsp;·&nbsp; ME7285 Term Project &nbsp;·&nbsp; Prof. Yi Zheng</div>
+    <h1>Experimental Analysis of Battery Pack Thermal Management Using Wind Tunnel</h1>
+    <p>
+      Hybrid active-passive cooling system combining <strong>forced air convection</strong> and <strong>paraffin wax PCM</strong> for a 16-cell lithium-ion battery pack. Experimental characterization across four wind speeds using a 3D-printed trapezoidal pack with full thermocouple instrumentation.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">16</div>
+        <div class="hero-stat-label">Instrumented cells</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">4</div>
+        <div class="hero-stat-label">Wind speeds tested</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num cool">&lt;45°C</div>
+        <div class="hero-stat-label">Peak at 5–10 m/s</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">40°C</div>
+        <div class="hero-stat-label">PCM melt onset</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERIMENTAL SETUP -->
+  <div class="page-section reveal">
+    <div class="two-col">
+
+      <!-- PHOTO GRID -->
+      <div>
+        <div class="section-eyebrow">Hardware</div>
+        <h2 class="section-heading">Experimental Setup</h2>
+        <div class="section-rule"></div>
+        <div class="photo-grid" style="margin-bottom:8px;">
+          <div class="photo-item tall">
+            <img src="wt-battery-pack.jpg" alt="3D printed battery pack with heating papers arranged in trapezoidal 4-row configuration" loading="lazy" />
+            <div class="photo-caption">Battery pack — 16-cell trapezoidal arrangement</div>
+          </div>
+          <div class="photo-item tall">
+            <img src="wt-tunnel-full.jpg" alt="Complete wind tunnel experimental setup" loading="lazy" />
+            <div class="photo-caption">Wind tunnel — 0 to 10 m/s range</div>
+          </div>
+        </div>
+        <div class="photo-grid">
+          <div class="photo-item">
+            <img src="wt-tunnel-glass.jpg" alt="Glass compartment of the wind tunnel showing battery pack placement" loading="lazy" />
+            <div class="photo-caption">Test compartment — pack placement</div>
+          </div>
+          <div class="photo-item">
+            <img src="wt-thermocouple.jpg" alt="Thermocouple placement inside battery cell for temperature measurement" loading="lazy" />
+            <div class="photo-caption">Thermocouple — max-temp location per cell</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETUP DETAILS -->
+      <div>
+        <div class="section-eyebrow" style="visibility:hidden;">spacer</div>
+        <h2 class="section-heading" style="visibility:hidden;">spacer</h2>
+        <div class="section-rule"></div>
+        <ul class="setup-list">
+          <li class="setup-item">
+            <span class="setup-icon">🔋</span>
+            <div class="setup-text">
+              <strong>Battery pack</strong>
+              <span>16 cylindrical cells in a 4-row trapezoidal arrangement — wider base facing wind for improved rear-row airflow. 3D printed using Markforged Onyx filament (chopped carbon fiber reinforced).</span>
+            </div>
+          </li>
+          <li class="setup-item">
+            <span class="setup-icon">🌡️</span>
+            <div class="setup-text">
+              <strong>Thermal simulation — heating papers</strong>
+              <span>Heating papers wired in parallel at 9.25 V (two DC power supplies) to simulate battery heat generation. Calibrated to achieve 70°C steady-state — the maximum safe operating temperature.</span>
+            </div>
+          </li>
+          <li class="setup-item">
+            <span class="setup-icon">🧊</span>
+            <div class="setup-text">
+              <strong>Phase change material</strong>
+              <span>Paraffin wax jacketed around each cell as passive thermal buffer. Melts at 40°C, absorbing latent heat and ensuring uniform temperature distribution during the cooling phase.</span>
+            </div>
+          </li>
+          <li class="setup-item">
+            <span class="setup-icon">📡</span>
+            <div class="setup-text">
+              <strong>Instrumentation — 16 thermocouples + PicoLog DAQ</strong>
+              <span>One thermocouple per cell placed at the predicted maximum-temperature location. Connected to PicoLog dataloggers for real-time temperature–time data acquisition and monitoring.</span>
+            </div>
+          </li>
+          <li class="setup-item">
+            <span class="setup-icon">💨</span>
+            <div class="setup-text">
+              <strong>Wind tunnel — 4 test conditions</strong>
+              <span>Tests run at 0, 2, 5, and 10 m/s to characterise cooling effectiveness across the full range from natural convection to high forced convection.</span>
+            </div>
+          </li>
+        </ul>
+
+        <!-- DAQ photo -->
+        <div class="photo-item" style="margin-top:12px;">
+          <img src="wt-datalogger.jpg" alt="PicoLog datalogger connected to thermocouples for temperature monitoring" loading="lazy" style="height:160px;object-fit:cover;width:100%;" />
+          <div class="photo-caption">PicoLog dataloggers — 16-channel temperature acquisition</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="page-section alt reveal">
+    <div class="section-eyebrow">Thermal Performance</div>
+    <h2 class="section-heading">Results</h2>
+    <div class="section-rule"></div>
+
+    <!-- SUMMARY CHART -->
+    <div class="chart-card" style="margin-bottom:2rem;">
+      <div class="chart-title">Peak temperature vs wind speed — safe operating limit at 50°C</div>
+      <div style="position:relative;width:100%;height:260px;">
+        <canvas id="tempChart" role="img" aria-label="Bar chart showing peak cell temperature dropping from 82°C at 0 m/s to 42°C at 10 m/s wind speed. Safe limit at 50°C shown as dashed line.">Peak temperatures: 0 m/s = 82°C, 2 m/s = 58°C, 5 m/s = 44°C, 10 m/s = 42°C. Safe limit = 50°C.</canvas>
+      </div>
+    </div>
+
+    <!-- TEMPERATURE PLOTS -->
+    <div class="plots-grid">
+      <div class="plot-card">
+        <div class="plot-header">
+          <span class="plot-wind danger">0 m/s — No airflow</span>
+          <span class="plot-badge danger">Peak ~82°C</span>
+        </div>
+        <img src="wt-temp-0ms.png" alt="Temperature profile of all 16 cells at 0 m/s — peak temperatures exceeding 80°C" loading="lazy" />
+      </div>
+      <div class="plot-card">
+        <div class="plot-header">
+          <span class="plot-wind warning">2 m/s — Low airflow</span>
+          <span class="plot-badge warning">Peak ~58°C</span>
+        </div>
+        <img src="wt-temp-2ms.png" alt="Temperature profile of all 16 cells at 2 m/s — peak drops below 60°C" loading="lazy" />
+      </div>
+      <div class="plot-card">
+        <div class="plot-header">
+          <span class="plot-wind good">5 m/s — Moderate airflow</span>
+          <span class="plot-badge good">Peak &lt;45°C</span>
+        </div>
+        <img src="wt-temp-5ms.png" alt="Temperature profile of all 16 cells at 5 m/s — peak stays below 45°C" loading="lazy" />
+      </div>
+      <div class="plot-card">
+        <div class="plot-header">
+          <span class="plot-wind great">10 m/s — High airflow</span>
+          <span class="plot-badge great">Peak ~42°C</span>
+        </div>
+        <img src="wt-temp-10ms.png" alt="Temperature profile of all 16 cells at 10 m/s — fastest cooling, peak ~42°C" loading="lazy" />
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY FINDINGS + LIMITATIONS -->
+  <div class="page-section reveal">
+    <div class="two-col">
+
+      <!-- FINDINGS -->
+      <div>
+        <div class="section-eyebrow">Analysis</div>
+        <h2 class="section-heading">Key Findings</h2>
+        <div class="section-rule"></div>
+        <ul class="finding-list">
+          <li class="finding-item">
+            <strong>2 m/s delivers the biggest relative gain</strong> — peak temperature drops from ~82°C to below 60°C with just minimal airflow. PCM latent heat absorption is the primary mechanism at this speed.
+          </li>
+          <li class="finding-item">
+            <strong>Safe operation confirmed at 5 m/s and above</strong> — peak temps remain under 45°C, well within the 50°C safe limit for Li-ion cells. Cooling speed also improves significantly.
+          </li>
+          <li class="finding-item">
+            <strong>Trapezoidal pack geometry validated</strong> — the wider inlet face improves airflow penetration to rear rows, reducing the temperature gradient across the pack.
+          </li>
+          <li class="finding-item">
+            <strong>Persistent hotspots identified</strong> — Row 2 #1, Row 2 #5, and Row 3 #4 consistently showed the highest temperatures across all wind speeds, suggesting local airflow stagnation in those positions.
+          </li>
+          <li class="finding-item">
+            <strong>PCM + forced air hybrid is effective</strong> — the PCM ensures uniform distribution during low-speed cooling while active airflow handles peak heat rejection, confirming the design hypothesis.
+          </li>
+        </ul>
+      </div>
+
+      <!-- LIMITATIONS + FUTURE -->
+      <div>
+        <div class="section-eyebrow">Reflection</div>
+        <h2 class="section-heading">Limitations & Future Work</h2>
+        <div class="section-rule"></div>
+
+        <div class="limit-group">
+          <h4>Current limitations</h4>
+          <ul class="limit-list">
+            <li>Heating papers used instead of real Li-ion cells — actual electrochemical heat generation has transient and non-uniform characteristics not fully captured by constant-power resistive heaters.</li>
+            <li>Only four discrete wind speeds tested — a continuous sweep would better characterise the transition between natural and forced convection regimes.</li>
+            <li>Pure paraffin wax PCM with fixed melt point (40°C) — enhanced PCMs with nano-additives or higher latent heat capacity could extend the passive cooling window.</li>
+            <li>No airflow velocity mapping inside the pack — CFD simulation would clarify the stagnation zones behind the persistent hotspot cells.</li>
+          </ul>
+        </div>
+
+        <div class="limit-group">
+          <h4>Future directions</h4>
+          <ul class="limit-list">
+            <li>Reposition thermocouples to cell outer surface to measure jacket temperature and validate PCM thermal resistance more directly.</li>
+            <li>Test airflow on the shorter (downstream) base of the trapezoid to quantify its effect on rear-row cell temperatures.</li>
+            <li>Integrate CFD simulation to correlate thermocouple readings with full 3D temperature field in the pack.</li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="section-eyebrow" style="margin-bottom:0.6rem;">Tools & techniques</div>
+          <div class="tags-row">
+            <span class="tag">Wind Tunnel</span>
+            <span class="tag">Thermocouple DAQ</span>
+            <span class="tag">PicoLog</span>
+            <span class="tag">Phase Change Materials</span>
+            <span class="tag">Paraffin Wax</span>
+            <span class="tag">Forced Convection</span>
+            <span class="tag">3D Printing (Onyx)</span>
+            <span class="tag">Li-ion Battery TMS</span>
+            <span class="tag">MATLAB / Python</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="microchannel.html" class="footer-nav-link">← Microchannel HX Optimization</a>
+    <a href="bev-tms.html" class="footer-nav-link">Next: BEV Thermal Management →</a>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script>
+    /* ── PEAK TEMPERATURE CHART ── */
+    const ctx = document.getElementById('tempChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['0 m/s', '2 m/s', '5 m/s', '10 m/s'],
+        datasets: [
+          {
+            label: 'Peak temperature (°C)',
+            data: [82, 58, 44, 42],
+            backgroundColor: ['rgba(239,68,68,0.7)', 'rgba(251,191,36,0.7)', 'rgba(34,197,94,0.7)', 'rgba(56,189,248,0.7)'],
+            borderColor:      ['#ef4444', '#fbbf24', '#22c55e', '#38bdf8'],
+            borderWidth: 1.5,
+            borderRadius: 2,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          annotation: {},
+          tooltip: {
+            backgroundColor: '#0f1520',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: '#e8edf5',
+            bodyColor: '#6b7a99',
+            callbacks: { label: ctx => ` Peak: ${ctx.raw}°C` }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#6b7a99', font: { size: 12 } }
+          },
+          y: {
+            min: 0, max: 95,
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#6b7a99', font: { size: 11 }, callback: v => v + '°C' }
+          }
+        }
+      },
+      plugins: [{
+        id: 'safeLimit',
+        afterDraw(chart) {
+          const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+          const yPos = y.getPixelForValue(50);
+          ctx.save();
+          ctx.setLineDash([6, 4]);
+          ctx.strokeStyle = 'rgba(249,115,22,0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(left, yPos); ctx.lineTo(right, yPos); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(249,115,22,0.7)';
+          ctx.font = '11px IBM Plex Mono, monospace';
+          ctx.fillText('Safe limit — 50°C', right - 130, yPos - 6);
+          ctx.restore();
+        }
+      }]
+    });
+
+    /* ── SCROLL REVEAL ── */
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
