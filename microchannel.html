@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Microchannel HX Optimization | Eric Chettiar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #090c13;
+      --surface:  #0f1520;
+      --surface2: #161d2e;
+      --border:   rgba(255,255,255,0.07);
+      --hot:      #f97316;
+      --amber:    #fbbf24;
+      --cool:     #38bdf8;
+      --text:     #e8edf5;
+      --muted:    #6b7a99;
+      --subtle:   #2a3349;
+      --gradient: linear-gradient(135deg, #f97316, #fbbf24);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 4rem;
+      background: rgba(9,12,19,0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      letter-spacing: 0.05em; color: var(--text); text-decoration: none;
+    }
+    .nav-logo span { color: var(--hot); }
+    .nav-back {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem;
+      color: var(--muted); text-decoration: none;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--hot); }
+    .nav-back::before { content: '←'; }
+
+    /* HERO */
+    .project-hero {
+      padding: 9rem 4rem 4rem;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-glow {
+      position: absolute; top: -10%; right: -5%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(249,115,22,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .project-type-label {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--hot); margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .project-type-label::before {
+      content: ''; display: inline-block;
+      width: 24px; height: 1px; background: var(--hot);
+    }
+    .project-hero h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      letter-spacing: -0.02em; line-height: 1.05;
+      margin-bottom: 1.2rem; max-width: 800px;
+    }
+    .project-hero p {
+      font-size: 1.05rem; color: var(--muted);
+      max-width: 620px; margin-bottom: 2.5rem; line-height: 1.75;
+    }
+    .project-hero p strong { color: var(--text); font-weight: 400; }
+    .hero-stats {
+      display: flex; gap: 0; flex-wrap: wrap;
+      border: 1px solid var(--border);
+      width: fit-content;
+    }
+    .hero-stat {
+      padding: 1.2rem 2rem;
+      border-right: 1px solid var(--border);
+    }
+    .hero-stat:last-child { border-right: none; }
+    .hero-stat-num {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem;
+      background: var(--gradient);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; line-height: 1; margin-bottom: 0.2rem;
+    }
+    .hero-stat-label {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+    }
+
+    /* LAYOUT */
+    .page-section { padding: 4rem; border-bottom: 1px solid var(--border); }
+    .page-section.alt { background: var(--surface); }
+
+    .two-col {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: start;
+    }
+    .two-col.flip { }
+
+    .section-eyebrow {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--hot); margin-bottom: 0.6rem;
+    }
+    .section-heading {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.6rem; letter-spacing: -0.01em;
+      margin-bottom: 0.5rem;
+    }
+    .section-rule {
+      width: 36px; height: 3px;
+      background: var(--gradient); margin-bottom: 1.5rem;
+    }
+
+    /* METHODOLOGY */
+    .method-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+    .method-item {
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 1rem 1.2rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--hot);
+      border-radius: 0 4px 4px 0;
+    }
+    .method-item:nth-child(2) { border-left-color: var(--amber); }
+    .method-item:nth-child(3) { border-left-color: var(--cool); }
+    .method-item:nth-child(4) { border-left-color: var(--muted); }
+    .method-num {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+      color: var(--hot); flex-shrink: 0; margin-top: 2px;
+      letter-spacing: 0.05em;
+    }
+    .method-item:nth-child(2) .method-num { color: var(--amber); }
+    .method-item:nth-child(3) .method-num { color: var(--cool); }
+    .method-item:nth-child(4) .method-num { color: var(--muted); }
+    .method-text strong {
+      display: block; font-weight: 500; font-size: 0.9rem;
+      margin-bottom: 0.15rem; color: var(--text);
+    }
+    .method-text span { font-size: 0.83rem; color: var(--muted); }
+
+    /* CHART CONTAINERS */
+    .chart-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+    }
+    .chart-title {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--muted); margin-bottom: 1rem;
+    }
+
+    /* RESULTS CARDS */
+    .results-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    .result-card {
+      background: var(--bg); padding: 2rem 1.8rem;
+      position: relative; overflow: hidden;
+      transition: background 0.3s;
+    }
+    .result-card:hover { background: var(--surface); }
+    .result-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: var(--gradient);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.4s;
+    }
+    .result-card:hover::before { transform: scaleX(1); }
+    .result-card:nth-child(2)::before { background: linear-gradient(135deg, var(--cool), #818cf8); }
+    .result-card:nth-child(3)::before { background: linear-gradient(135deg, var(--amber), #a3e635); }
+    .result-icon { font-size: 1.4rem; margin-bottom: 0.8rem; }
+    .result-label {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--muted); margin-bottom: 0.4rem;
+    }
+    .result-value {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.6rem; line-height: 1.1; margin-bottom: 0.4rem;
+    }
+    .result-value.hot { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .result-value.cool { color: var(--cool); }
+    .result-value.amber { color: var(--amber); }
+    .result-sub { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+    /* SPEC STRIP */
+    .spec-strip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex; flex-wrap: wrap; gap: 1.5rem;
+      align-items: center; margin-top: 2rem;
+    }
+    .spec-strip-label {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--hot); flex-shrink: 0;
+    }
+    .spec-items { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+    .spec-item {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem;
+      color: var(--text); background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.8rem; border-radius: 2px;
+    }
+
+    /* LIMITATIONS */
+    .limit-group { margin-bottom: 1.8rem; }
+    .limit-group h4 {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.9rem; margin-bottom: 0.8rem;
+      color: var(--text);
+    }
+    .limit-list { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .limit-list li {
+      font-size: 0.85rem; color: var(--muted);
+      display: flex; gap: 0.6rem; align-items: flex-start; line-height: 1.6;
+    }
+    .limit-list li::before {
+      content: '—'; color: var(--subtle); flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* TAGS & FOOTER NAV */
+    .tags-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+    .tag {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+      color: var(--muted); background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.7rem; border-radius: 2px; letter-spacing: 0.04em;
+    }
+    .page-footer-nav {
+      padding: 3rem 4rem;
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--border);
+    }
+    .footer-nav-link {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
+      text-decoration: none; color: var(--muted);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 0.5rem;
+      transition: color 0.2s;
+    }
+    .footer-nav-link:hover { color: var(--hot); }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* CHART.JS OVERRIDES */
+    canvas { display: block; }
+
+    /* SLIDER STYLING */
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; height: 4px;
+      background: var(--subtle); border-radius: 2px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--hot); cursor: pointer;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      nav { padding: 1rem 1.5rem; }
+      .project-hero, .page-section { padding: 4rem 1.5rem; }
+      .project-hero { padding-top: 7rem; }
+      .two-col { grid-template-columns: 1fr; gap: 2.5rem; }
+      .results-grid { grid-template-columns: 1fr; }
+      .hero-stats { flex-direction: column; }
+      .hero-stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .page-footer-nav { flex-direction: column; gap: 1.5rem; padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">E<span>.</span>CHETTIAR</a>
+    <a href="index.html#projects" class="nav-back">&nbsp;All Projects</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="project-hero">
+    <div class="hero-glow"></div>
+    <div class="project-type-label">Independent Research &nbsp;·&nbsp; ANSYS Fluent &nbsp;·&nbsp; MATLAB</div>
+    <h1>Microchannel Heat Exchanger Multi-Objective Optimization</h1>
+    <p>
+      High-fidelity CFD modeling of a microchannel cold plate for <strong>high-power electronics cooling</strong>, combined with NSGA-II genetic algorithm optimization to generate a Pareto-optimal geometry balancing heat dissipation and pressure drop penalty.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">14,749</div>
+        <div class="hero-stat-label">W/m²K peak h</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">+74%</div>
+        <div class="hero-stat-label">Overall improvement</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">±2.1%</div>
+        <div class="hero-stat-label">CFD validation error</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">±4.7%</div>
+        <div class="hero-stat-label">Manufacturing robustness</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- METHODOLOGY + PARETO FRONT -->
+  <div class="page-section reveal">
+    <div class="two-col">
+      <div>
+        <div class="section-eyebrow">Approach</div>
+        <h2 class="section-heading">Methodology</h2>
+        <div class="section-rule"></div>
+        <ul class="method-list">
+          <li class="method-item">
+            <span class="method-num">01</span>
+            <div class="method-text">
+              <strong>High-fidelity CFD modelling</strong>
+              <span>Conjugate heat transfer simulations in ANSYS Fluent for a microchannel cold plate targeting ASIC/VRM thermal management on PCIe accelerator cards. Water coolant, 333,333 W/m² heat flux input.</span>
+            </div>
+          </li>
+          <li class="method-item">
+            <span class="method-num">02</span>
+            <div class="method-text">
+              <strong>Design of Experiments (CCD)</strong>
+              <span>25-case Central Composite Design varying 4 parameters — channel width W, height H, length L, and Reynolds number Re — to systematically explore the design space and build a statistical performance dataset.</span>
+            </div>
+          </li>
+          <li class="method-item">
+            <span class="method-num">03</span>
+            <div class="method-text">
+              <strong>Response Surface Modelling</strong>
+              <span>Linear RSM fitted to the DOE results. R² = 0.9318 — model accurately captures how each variable drives heat transfer coefficient h and pressure drop ΔP across the design space.</span>
+            </div>
+          </li>
+          <li class="method-item">
+            <span class="method-num">04</span>
+            <div class="method-text">
+              <strong>NSGA-II Multi-Objective Optimisation</strong>
+              <span>Weighted-sum NSGA-II sweeping w₁ from 0 to 1 to generate a 6-point Pareto front trading off max heat transfer against min pumping power. Validated against analytical correlations with 13.7% agreement.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- PARETO FRONT CHART -->
+      <div class="chart-card reveal">
+        <div class="chart-title">Pareto front — heat transfer vs pressure drop</div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1rem;">
+          <span style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted);">
+            <span style="width:8px;height:8px;border-radius:50%;background:#378ADD;display:inline-block;"></span>Pareto points
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted);">
+            <span style="width:8px;height:8px;border-radius:50%;background:#D85A30;display:inline-block;"></span>Max HT
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted);">
+            <span style="width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>Min ΔP
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted);">
+            <span style="width:8px;height:8px;border-radius:50%;background:#BA7517;display:inline-block;"></span>Balanced
+          </span>
+        </div>
+
+        <div style="position:relative;width:100%;height:280px;">
+          <canvas id="paretoChart" role="img" aria-label="Pareto front scatter chart showing heat transfer coefficient vs pressure drop for 6 microchannel designs.">Min-ΔP: 12,860 W/m²K at 16.4 kPa. Max-HT: 14,451 W/m²K at 54.6 kPa.</canvas>
+        </div>
+
+        <div id="paretoTip" style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:var(--bg);border:1px solid var(--border);border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--muted);min-height:32px;">
+          Hover a point to inspect design variables
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS CARDS -->
+  <div class="page-section alt reveal">
+    <div class="section-eyebrow">Outcomes</div>
+    <h2 class="section-heading">Key Results</h2>
+    <div class="section-rule"></div>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-icon">🌡️</div>
+        <div class="result-label">Heat transfer coefficient</div>
+        <div class="result-value hot">14,749 W/m²K</div>
+        <div class="result-sub">+74% above industry average of 8,500 W/m²K. Achieved at optimal geometry W=H=100 μm, L=15 mm, Re=800.</div>
+      </div>
+      <div class="result-card">
+        <div class="result-icon">💧</div>
+        <div class="result-label">Pressure drop at optimum</div>
+        <div class="result-value cool">37.4 kPa</div>
+        <div class="result-sub">Within middle of industry range (10–100 kPa). Pareto front spans 16.4–54.6 kPa — designer chooses tradeoff.</div>
+      </div>
+      <div class="result-card">
+        <div class="result-icon">🏭</div>
+        <div class="result-label">Manufacturing robustness</div>
+        <div class="result-value amber">±4.7%</div>
+        <div class="result-sub">2× better than the ±10% industry standard. Performance guaranteed in range 13,779–15,124 W/m²K under tolerance variation.</div>
+      </div>
+    </div>
+
+    <div class="spec-strip">
+      <span class="spec-strip-label">Optimal design</span>
+      <div class="spec-items">
+        <span class="spec-item">W = 100 μm</span>
+        <span class="spec-item">H = 100 μm</span>
+        <span class="spec-item">L = 15 mm</span>
+        <span class="spec-item">Re = 800</span>
+        <span class="spec-item">v = 6.37 m/s</span>
+        <span class="spec-item">h = 14,749 W/m²K</span>
+        <span class="spec-item">ΔP = 37.4 kPa</span>
+        <span class="spec-item">Q = 333,333 W/m²</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESPONSE SURFACE + LIMITATIONS -->
+  <div class="page-section reveal">
+    <div class="two-col">
+
+      <!-- RESPONSE SURFACE -->
+      <div class="chart-card">
+        <div class="chart-title">Response surface — h (W/m²K) vs W and Re</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:5px;">Channel height H — <span id="hLabel2">100</span> μm</div>
+            <input type="range" min="100" max="400" step="10" value="100" id="hSlider2">
+          </div>
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:5px;">Channel length L — <span id="lLabel2">15</span> mm</div>
+            <input type="range" min="15" max="45" step="5" value="15" id="lSlider2">
+          </div>
+        </div>
+
+        <canvas id="heatmap2" style="width:100%;border-radius:2px;border:1px solid var(--border);display:block;"></canvas>
+
+        <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:4px;">
+          <span>W = 100 μm</span><span>← channel width →</span><span>W = 400 μm</span>
+        </div>
+
+        <div style="display:flex;gap:0;height:8px;border-radius:2px;overflow:hidden;border:1px solid var(--border);margin-top:8px;" id="colorbar2"></div>
+        <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:3px;">
+          <span id="cb2Min">low</span><span id="cb2Mid"></span><span id="cb2Max">high</span>
+        </div>
+
+        <div id="hmTip" style="margin-top:0.8rem;padding:0.5rem 0.8rem;background:var(--bg);border:1px solid var(--border);border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--muted);min-height:28px;">
+          Hover to inspect values
+        </div>
+      </div>
+
+      <!-- LIMITATIONS + FUTURE WORK -->
+      <div>
+        <div class="section-eyebrow">Reflection</div>
+        <h2 class="section-heading">Limitations & Future Work</h2>
+        <div class="section-rule"></div>
+
+        <div class="limit-group">
+          <h4>Current limitations</h4>
+          <ul class="limit-list">
+            <li>Linear RSM (R² = 0.9318) may underfit non-linear interactions at extreme parameter combinations — a quadratic or kriging model could improve accuracy in boundary regions.</li>
+            <li>Single-phase water cooling assumed throughout; two-phase or nanofluid coolants could unlock further heat transfer gains beyond what this model captures.</li>
+            <li>Analytical validation at 13.7% agreement — acceptable for design screening, but experimental validation on fabricated samples would be needed before production.</li>
+            <li>Pareto front generated with 6 weighted-sum solutions; a true population-based NSGA-II run would produce a denser, more representative front.</li>
+          </ul>
+        </div>
+
+        <div class="limit-group">
+          <h4>Future directions</h4>
+          <ul class="limit-list">
+            <li>Extend to manifold microchannel designs to reduce flow non-uniformity across the cold plate area.</li>
+            <li>Incorporate transient thermal response modelling for pulsed load scenarios common in GPU and ASIC workloads.</li>
+            <li>Physical fabrication and bench testing using a high-power test setup to close the simulation-to-hardware loop.</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <div class="section-eyebrow" style="margin-bottom:0.6rem;">Tools used</div>
+          <div class="tags-row">
+            <span class="tag">ANSYS Fluent</span>
+            <span class="tag">MATLAB</span>
+            <span class="tag">NSGA-II</span>
+            <span class="tag">Central Composite Design</span>
+            <span class="tag">Conjugate HT</span>
+            <span class="tag">Response Surface</span>
+            <span class="tag">Pareto Optimisation</span>
+            <span class="tag">Water Cooling</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="index.html#projects" class="footer-nav-link">← Back to all projects</a>
+    <a href="bev-tms.html" class="footer-nav-link">Next: BEV Thermal Management →</a>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script>
+    /* ── PARETO FRONT CHART ── */
+    const pareto = [
+      { x:16.4, y:12860, W:100, H:400, L:15, Re:770, label:'Min pressure drop' },
+      { x:25.5, y:14005, W:100, H:197, L:15, Re:800, label:'Pareto point' },
+      { x:26.1, y:14033, W:100, H:191, L:15, Re:800, label:'Balanced solution' },
+      { x:25.9, y:14025, W:100, H:193, L:15, Re:800, label:'Pareto point' },
+      { x:26.5, y:14048, W:100, H:188, L:15, Re:800, label:'Pareto point' },
+      { x:54.6, y:14451, W:100, H:100, L:15, Re:800, label:'Max heat transfer' }
+    ];
+    const ptColors = pareto.map(p =>
+      p.label==='Max heat transfer' ? '#D85A30' :
+      p.label==='Min pressure drop' ? '#1D9E75' :
+      p.label==='Balanced solution' ? '#BA7517' : '#378ADD'
+    );
+    const ptSizes = pareto.map(p => p.label==='Pareto point' ? 7 : 11);
+
+    const paretoCtx = document.getElementById('paretoChart').getContext('2d');
+    const paretoChart = new Chart(paretoCtx, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            data: pareto.map(p=>({x:p.x,y:p.y})),
+            type: 'line',
+            borderColor: 'rgba(249,115,22,0.2)',
+            borderWidth: 1.5,
+            borderDash: [4,3],
+            pointRadius: 0,
+            fill: false,
+            tension: 0.35
+          },
+          {
+            data: pareto.map(p=>({x:p.x,y:p.y})),
+            backgroundColor: ptColors,
+            borderColor: ptColors,
+            pointRadius: ptSizes,
+            pointHoverRadius: ptSizes.map(s=>s+2)
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: {
+            title: { display:true, text:'Pressure drop (kPa)', color:'#6b7a99', font:{size:11} },
+            min:8, max:65,
+            grid: { color:'rgba(255,255,255,0.04)' },
+            ticks: { color:'#6b7a99', font:{size:10}, callback: v=>v+' kPa' }
+          },
+          y: {
+            title: { display:true, text:'h (W/m²K)', color:'#6b7a99', font:{size:11} },
+            min:11500, max:15500,
+            grid: { color:'rgba(255,255,255,0.04)' },
+            ticks: { color:'#6b7a99', font:{size:10}, callback: v=>v.toLocaleString() }
+          }
+        },
+        onHover: (_,els) => {
+          const tip = document.getElementById('paretoTip');
+          if(els.length && els[0].datasetIndex===1) {
+            const p = pareto[els[0].index];
+            tip.innerHTML = `<span style="color:#e8edf5;font-weight:500;">${p.label}</span> &nbsp;·&nbsp; W=${p.W}μm H=${p.H}μm L=${p.L}mm Re=${p.Re} &nbsp;→&nbsp; h=${p.y.toLocaleString()} W/m²K · ΔP=${p.x} kPa`;
+          } else {
+            tip.textContent = 'Hover a point to inspect design variables';
+          }
+        }
+      }
+    });
+
+    /* ── RESPONSE SURFACE HEATMAP ── */
+    const coeffs = [9885.69, -1465.79, -588.32, -534.63, 1767.39];
+    const xMean  = [215.38, 203.85, 27.69, 500.0];
+    const xStd   = [124.81, 128.23, 12.01, 244.95];
+
+    function predictH(W,H,L,Re) {
+      return coeffs[0]
+        + coeffs[1]*(W-xMean[0])/xStd[0]
+        + coeffs[2]*(H-xMean[1])/xStd[1]
+        + coeffs[3]*(L-xMean[2])/xStd[2]
+        + coeffs[4]*(Re-xMean[3])/xStd[3];
+    }
+
+    function thermalColor(t) {
+      const stops = [
+        [0,   [42,100,180]],
+        [0.25,[56,189,248]],
+        [0.5, [250,204,21]],
+        [0.75,[249,115,22]],
+        [1.0, [185,28,28]]
+      ];
+      let i=0;
+      while(i<stops.length-2 && stops[i+1][0]<=t) i++;
+      const [[t0,c0],[t1,c1]] = [stops[i],stops[i+1]];
+      const f=(t-t0)/(t1-t0);
+      return c0.map((v,j)=>Math.round(v+f*(c1[j]-v)));
+    }
+
+    const NW=60, NR=40;
+    const Ws  = Array.from({length:NW},(_,i)=>100+i*(300/(NW-1)));
+    const Res = Array.from({length:NR},(_,i)=>200+i*(600/(NR-1)));
+
+    function drawHeatmap() {
+      const H = +document.getElementById('hSlider2').value;
+      const L = +document.getElementById('lSlider2').value;
+      document.getElementById('hLabel2').textContent = H;
+      document.getElementById('lLabel2').textContent = L;
+
+      const grid=[]; let mn=Infinity, mx=-Infinity;
+      for(let r=0;r<NR;r++) for(let w=0;w<NW;w++) {
+        const h=predictH(Ws[w],H,L,Res[r]);
+        grid.push(h); mn=Math.min(mn,h); mx=Math.max(mx,h);
+      }
+
+      const canvas = document.getElementById('heatmap2');
+      const cw = canvas.offsetWidth || 380;
+      const ch = Math.round(cw*NR/NW);
+      canvas.width=cw; canvas.height=ch;
+      const ctx=canvas.getContext('2d');
+      const cw2=cw/NW, ch2=ch/NR;
+
+      for(let r=0;r<NR;r++) for(let w=0;w<NW;w++) {
+        const t=(grid[r*NW+w]-mn)/(mx-mn);
+        const [R,G,B]=thermalColor(t);
+        ctx.fillStyle=`rgb(${R},${G},${B})`;
+        ctx.fillRect(Math.round(w*cw2), Math.round((NR-1-r)*ch2), Math.ceil(cw2)+1, Math.ceil(ch2)+1);
+      }
+
+      const px=0, py=0;
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(px,py,8,0,Math.PI*2); ctx.stroke();
+
+      const optPx=0, optPy=ch-1;
+      ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(optPx,optPy,7,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='10px IBM Plex Mono,monospace';
+      ctx.fillText('Optimal', optPx+10, optPy-4);
+
+      document.getElementById('cb2Min').textContent = Math.round(mn).toLocaleString()+' W/m²K';
+      document.getElementById('cb2Mid').textContent = Math.round((mn+mx)/2).toLocaleString();
+      document.getElementById('cb2Max').textContent = Math.round(mx).toLocaleString();
+
+      const cb = document.getElementById('colorbar2');
+      const steps=40;
+      cb.innerHTML = Array.from({length:steps},(_,i)=>{
+        const [R,G,B]=thermalColor(i/(steps-1));
+        return `<div style="flex:1;height:100%;background:rgb(${R},${G},${B})"></div>`;
+      }).join('');
+      cb.style.display='flex';
+
+      canvas.onmousemove = e => {
+        const rect=canvas.getBoundingClientRect();
+        const wi=Math.round((e.clientX-rect.left)/rect.width*(NW-1));
+        const ri=NR-1-Math.round((e.clientY-rect.top)/rect.height*(NR-1));
+        if(wi>=0&&wi<NW&&ri>=0&&ri<NR){
+          const W2=Math.round(Ws[wi]), Re2=Math.round(Res[ri]);
+          const hv=Math.round(predictH(W2,H,L,Re2));
+          document.getElementById('hmTip').innerHTML =
+            `W=${W2}μm &nbsp;Re=${Re2} &nbsp;H=${H}μm &nbsp;L=${L}mm &nbsp;→&nbsp; <span style="color:#e8edf5;font-weight:500;">h=${hv.toLocaleString()} W/m²K</span>`;
+        }
+      };
+      canvas.onmouseleave = () => {
+        document.getElementById('hmTip').textContent = 'Hover to inspect values';
+      };
+    }
+
+    document.getElementById('hSlider2').oninput = drawHeatmap;
+    document.getElementById('lSlider2').oninput = drawHeatmap;
+    window.addEventListener('load', drawHeatmap);
+    setTimeout(drawHeatmap, 300);
+
+    /* ── SCROLL REVEALS ── */
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    reveals.forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
